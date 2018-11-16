@@ -1,6 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define UNICODE
-#define objectnum(obj) (sizeof(obj)sizeof(obj[0]))
+#define objectnum(obj) (sizeof(obj)/sizeof(obj[0]))
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
@@ -9,7 +9,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include "DblBuffer.h"
+#include "Display.h"
 using namespace std;
 
 //Attribute = 0 physic, 1 magic
@@ -21,19 +21,10 @@ typedef struct {
 	int attribute;
 }STATUS;
 
-//キーボードの入力コードのENUM
-enum INPUTCOMMAND
-{
-	UP = 72,
-	DOWN = 80,
-	LEFT = 75,
-	RIGHT = 77,
-	ENTER = 13,
-	ESC = 27,
-};
-
 //入力したキャラクター名前が存在しているかどうか確認する
 bool FindName(STATUS *, STATUS *, int);
+
+int getinput(int *row, int rowNum);
 
 //Cursorの座標
 COORD pos = { 0, 0 };
@@ -47,52 +38,71 @@ void main() {
 	//Cursor情報を取る
 	CONSOLE_CURSOR_INFO CCI;
 
+	//windowのcursorを隠す
+	CCI.dwSize = 1;
+	CCI.bVisible = false;
+	SetConsoleCursorInfo(hWindow, &CCI);
+
 	//window titleを設定する
 	SetConsoleTitleA("セーブ　クリスタル");
 
-	//ファイルをオープンする
-	FILE *fp;
-	fp = fopen("status.dat", "ab+");
-	if (!fp) {
-		printf("Fail to open file...\n");
-		exit(1);
-	}
+	//開始画面を表示する-------------------------------------------
+	int CreateorLoad;
+	CreateorLoad = DrawStartMenu(hWindow, pos);
+	//------------------------------------------------------------
 
-	//Load saved character
-	STATUS saved_Characters[100], *saved_Char_P;
-	STATUS load_Chracter;
-	char loadName[100];
-	int loadHp, loadAtk, loadDef, loadAttribute;
-	int characterNum = 0;
-	saved_Char_P = &saved_Characters[0];
+	if (CreateorLoad == 1) {
+		//ファイルをオープンする
+		FILE *fp;
+		fp = fopen("status.dat", "ab+");
+		if (!fp) {
+			printf("Fail to open file...\n");
+			exit(1);
+		}
 
-	while (fread(&load_Chracter, sizeof(load_Chracter), 1, fp) == 1) {
-		strcpy((saved_Char_P + characterNum)->name, load_Chracter.name);
-		(saved_Char_P + characterNum)->hp = load_Chracter.hp;
-		(saved_Char_P + characterNum)->atk = load_Chracter.atk;
-		(saved_Char_P + characterNum)->def = load_Chracter.def;
-		(saved_Char_P + characterNum)->attribute = load_Chracter.attribute;
-		characterNum++;
-	}
-	if (characterNum != 0)
-		printf("Have %d Data!\n", characterNum);
+		//Load saved character
+		STATUS saved_Characters[100], *saved_Char_P;
+		STATUS load_Chracter;
+		char loadName[100];
+		int loadHp, loadAtk, loadDef, loadAttribute;
+		int characterNum = 0;
+		saved_Char_P = &saved_Characters[0];
 
-	getchar();
+		while (fread(&load_Chracter, sizeof(load_Chracter), 1, fp) == 1) {
+			*(saved_Char_P + characterNum) = load_Chracter;
+			characterNum++;
+		}
 
-	//新規キャラクターを生成する
-	STATUS input_status;
-	STATUS *in_st;
-	in_st = &input_status;
+		getchar();
 
-	srand((unsigned)time(NULL));
+		//新規キャラクターを生成する
+		STATUS input_status;
+		STATUS *in_st;
+		in_st = &input_status;
 
-	printf("キャラクターの名前を入力してください:");
-	scanf("%s", in_st->name);
+		srand((unsigned)time(NULL));
 
-	bool HaveorNot = false;
-	if (characterNum > 0) {
-		HaveorNot = FindName(in_st, saved_Char_P, characterNum);
-		if (HaveorNot == false) {
+		printf("キャラクターの名前を入力してください:");
+		scanf("%s", in_st->name);
+
+		bool HaveorNot = false;
+		if (characterNum > 0) {
+			HaveorNot = FindName(in_st, saved_Char_P, characterNum);
+			if (HaveorNot == false) {
+				for (int i = 0; i < 4; i++) {
+					if (i == 0)
+						in_st->hp = (rand() % (500 - 100 + 1)) + 100;
+					else if (i == 1)
+						in_st->atk = (rand() % (100 - 10 + 1)) + 10;
+					else if (i == 2)
+						in_st->def = (rand() % (100 - 10 + 1)) + 10;
+					else if (i == 3)
+						in_st->attribute = (rand() % (1 - 0 + 1)) + 0;
+				}
+				fwrite(in_st, sizeof(*in_st), 1, fp);
+			}
+		}
+		else {
 			for (int i = 0; i < 4; i++) {
 				if (i == 0)
 					in_st->hp = (rand() % (500 - 100 + 1)) + 100;
@@ -105,36 +115,29 @@ void main() {
 			}
 			fwrite(in_st, sizeof(*in_st), 1, fp);
 		}
-	}
-	else {
-		for (int i = 0; i < 4; i++) {
-			if (i == 0)
-				in_st->hp = (rand() % (500 - 100 + 1)) + 100;
-			else if (i == 1)
-				in_st->atk = (rand() % (100 - 10 + 1)) + 10;
-			else if (i == 2)
-				in_st->def = (rand() % (100 - 10 + 1)) + 10;
-			else if (i == 3)
-				in_st->attribute = (rand() % (1 - 0 + 1)) + 0;
+
+		fclose(fp);
+
+		if (HaveorNot == false) {
+			if (in_st->attribute == 0)
+				printf("自動生成キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Physic\n", in_st->name, in_st->hp, in_st->atk, in_st->def);
+			else
+				printf("自動生成キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Magic\n", in_st->name, in_st->hp, in_st->atk, in_st->def);
 		}
-		fwrite(in_st, sizeof(*in_st), 1, fp);
-	}
-
-	fclose(fp);
-
-	if (HaveorNot == false) {
-		if (in_st->attribute == 0)
-			printf("自動生成キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Physic\n", in_st->name, in_st->hp, in_st->atk, in_st->def);
-		else
-			printf("自動生成キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Magic\n", in_st->name, in_st->hp, in_st->atk, in_st->def);
+		else {
+			printf("キャラクターはすでに存在しています。\n");
+			if (in_st->attribute == 0)
+				printf("キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Physic\n", in_st->name, in_st->hp, in_st->atk, in_st->def);
+			else
+				printf("キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Magic\n", in_st->name, in_st->hp, in_st->atk, in_st->def);
+		}
 	}
 	else {
-		printf("キャラクターはすでに存在しています。\n");
-		if (in_st->attribute == 0)
-			printf("キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Physic\n", in_st->name, in_st->hp, in_st->atk, in_st->def);
-		else
-			printf("キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Magic\n", in_st->name, in_st->hp, in_st->atk, in_st->def);
+		int getNum;
+		getNum = LoadCharacter();
 	}
+	
+
 
 	rewind(stdin);
 	getchar();
@@ -164,6 +167,5 @@ bool FindName(STATUS *input, STATUS *loadList, int loadNum) {
 			return true;
 		}
 	}
-
 	return false;
 }
