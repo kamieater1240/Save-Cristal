@@ -12,19 +12,8 @@
 #include "Display.h"
 using namespace std;
 
-//Attribute = 0 physic, 1 magic
-typedef struct {
-	char name[100];
-	int hp;
-	int atk;
-	int def;
-	int attribute;
-}STATUS;
-
 //入力したキャラクター名前が存在しているかどうか確認する
 bool FindName(STATUS *, STATUS *, int);
-
-int getinput(int *row, int rowNum);
 
 //Cursorの座標
 COORD pos = { 0, 0 };
@@ -48,32 +37,34 @@ void main() {
 
 	//開始画面を表示する-------------------------------------------
 	int CreateorLoad;
+	STATUS saved_Characters[100], *saved_Char_P;
 	CreateorLoad = DrawStartMenu(hWindow, pos);
-	//------------------------------------------------------------
+	//-------------------------------------------------------------
 
-	if (CreateorLoad == 1) {
-		//ファイルをオープンする
-		FILE *fp;
-		fp = fopen("status.dat", "ab+");
-		if (!fp) {
-			printf("Fail to open file...\n");
-			exit(1);
-		}
+	//--------------------------------データロード------------------------------------------------
+	//ファイルをオープンする
+	FILE *fp;
+	fp = fopen("status.dat", "ab+");
+	if (!fp) {
+		printf("Fail to open file...\n");
+		exit(1);
+	}
 
-		//Load saved character
-		STATUS saved_Characters[100], *saved_Char_P;
-		STATUS load_Chracter;
-		char loadName[100];
-		int loadHp, loadAtk, loadDef, loadAttribute;
-		int characterNum = 0;
-		saved_Char_P = &saved_Characters[0];
+	//Load saved character
+	STATUS load_Chracter;
+	char loadName[100];
+	int loadHp, loadAtk, loadDef, loadAttribute;
+	int characterNum = 0;
+	saved_Char_P = &saved_Characters[0];
 
-		while (fread(&load_Chracter, sizeof(load_Chracter), 1, fp) == 1) {
-			*(saved_Char_P + characterNum) = load_Chracter;
-			characterNum++;
-		}
+	while (fread(&load_Chracter, sizeof(load_Chracter), 1, fp) == 1) {
+		*(saved_Char_P + characterNum) = load_Chracter;
+		characterNum++;
+	}
+	//getchar();
+	//--------------------------------------------------------------------------------------------
 
-		getchar();
+	if (CreateorLoad == 0) {
 
 		//新規キャラクターを生成する
 		STATUS input_status;
@@ -134,10 +125,22 @@ void main() {
 	}
 	else {
 		int getNum;
-		getNum = LoadCharacter();
+		getNum = LoadCharacter(hWindow, pos, saved_Char_P, characterNum);
+		system("cls");
+		printf("Get %dth character       Finished Load Menu!!!!\n", getNum + 1);
+		//getchar();
+		printf("キャラクターはすでに存在しています。\n");
+		if ((saved_Char_P + getNum)->attribute == 0)
+			printf("キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Physic\n", (saved_Char_P + getNum)->name, (saved_Char_P + getNum)->hp, (saved_Char_P + getNum)->atk, (saved_Char_P + getNum)->def);
+		else
+			printf("キャラクター\n名前: %s\nHP: %d\nATK: %d\nDEF: %d\nAttribute: Magic\n", (saved_Char_P + getNum)->name, (saved_Char_P + getNum)->hp, (saved_Char_P + getNum)->atk, (saved_Char_P + getNum)->def);
 	}
-	
+	//system("cls");
+	//START BATTLE !!!!!!!!!!!!!!!!!!!!!!!!======================================================//
 
+
+
+	//===========================================================================================//
 
 	rewind(stdin);
 	getchar();

@@ -7,7 +7,7 @@
 #include <windows.h>
 #include <string>
 #include <iostream>
-#include <fstream>
+#include "Display.h"
 using namespace std;
 
 //キーボードの入力コードのENUM
@@ -27,25 +27,33 @@ const char *startText[] =
 	"よろしくお願いします。\n"
 };
 
-int getinput(int *row, int rowNum) {
+int getinput(int *row, int rowNum, int * column, int columnNum, int listNum) {
 
 	int get;
 	get = _getch();
 	if (get == UP) {
-		if (*row > 1) {
+		if (*row > 0) {
 			*row -= 1;
 		}
 		else {
-			*row = rowNum;
+			*row = rowNum - 1;
 		}
 	}
 	else if (get == DOWN) {
-		if (*row < rowNum) {
+		if (*row < rowNum - 1) {
 			*row += 1;
 		}
 		else {
-			*row = 1;
+			*row = 0;
 		}
+	}
+	else if (get == LEFT) {
+		if( *column > 0)
+			*column -= 1;
+	}
+	else if (get == RIGHT) {
+		if (*column < columnNum - 1 && (*row * 3 + *column) != listNum - 1)
+			*column += 1;
 	}
 	else if (get == ENTER)
 		return ENTER;
@@ -89,28 +97,54 @@ void drawchoices(HANDLE hWindow, COORD pos, char(*choice)[100], int listNum, int
 	int strlength;
 
 	SetConsoleCursorPosition(hWindow, pos);
-	for (int i = 1; i <= listNum; i++) {
-		strlength = strlen(choice[i - 1]);
-		pos.X = Moto_pos.X - strlength / 2;
+	for (int i = 0; i < listNum; i++) {
+		//strlength = strlen(choice[i - 1]);
+		//pos.X = Moto_pos.X - strlength / 2;
 		if (i == index) {
 			SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-			SetConsoleCursorPosition(hWindow, pos);
-			pos.Y++;
-			printf("%s", choice[i - 1]);
 		}
 		else {
 			SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-			SetConsoleCursorPosition(hWindow, pos);
-			pos.Y++;
-			printf("%s", choice[i - 1]);
 		}
+		SetConsoleCursorPosition(hWindow, pos);
+		pos.Y++;
+		printf("%s", choice[i]);
 	}
 	return;
 }
 
+void drawchoices_forLoad(HANDLE hWindow, COORD pos, STATUS *loadList, int listNum, int indexsize, int columnsize, int index, int column) {
+
+	
+	pos = { 2, 4 };
+	SetConsoleCursorPosition(hWindow, pos);
+
+	for (int i = 0; i < indexsize; i++) {
+		pos.X = 2;
+		pos.Y = 4 + i * 2;
+		SetConsoleCursorPosition(hWindow, pos);
+		for (int j = 0; j < columnsize; j++) {
+			pos.X = 2 + j * 10;
+			SetConsoleCursorPosition(hWindow, pos);
+
+			if (i == index && j == column) {
+				SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+			}
+			else {
+				SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+			}
+
+			printf("%s", (loadList + i * 3 + j)->name);
+
+			if ((i * 3 + j) == listNum - 1)
+				break;
+		}
+	}
+}
+
 //開始画面を描く
 int DrawStartMenu(HANDLE hWindow, COORD pos) {
-	int strlength, press, row = 1;
+	int strlength, press, row = 0;
 
 	pos.X = 25; pos.Y = 6;
 	DrawRectangle(hWindow, pos, 50, 8, '*', ' ');
@@ -133,18 +167,35 @@ int DrawStartMenu(HANDLE hWindow, COORD pos) {
 	pos.X = 40; pos.Y = 15;
 	DrawRectangle(hWindow, pos, 20, 4, '*', ' ');
 	while (1) {
-		pos.X = 50; pos.Y = 16;
+		pos.X = 41; pos.Y = 16;
 		drawchoices(hWindow, pos, choices, 2, row);
-		press = getinput(&row, 2);
+		press = getinput(&row, 2, 0, 0, 2);
 		if (press == ENTER) {
 			system("cls");
 			return row;
-			break;
 		}
 	}
 }
 
-int LoadCharacter() {
+int LoadCharacter(HANDLE hWindow, COORD pos, STATUS *loadList, int listNum) {
+	int press, row = 0, column = 0;
 
+	while (1) {
+		pos = { 0, 0 };
+		SetConsoleCursorPosition(hWindow, pos);
+		SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+		system("cls");
+		DrawRectangle(hWindow, pos, 100, 29, '*', ' ');
+		pos = { 2, 2 };
+		SetConsoleCursorPosition(hWindow, pos);
+		printf("どのキャラクターを選びますか？");
+		drawchoices_forLoad(hWindow, pos, loadList, listNum, (listNum / 3) + 1, 3, row, column);
+		press = getinput(&row, (listNum / 3) + 1, &column, 3, listNum);
+		if (press == ENTER) {
+			return row * 3 + column;
+		}
+	}
+	
 
+	return 0;
 }
