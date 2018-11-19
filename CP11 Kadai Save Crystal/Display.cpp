@@ -27,6 +27,7 @@ const char *startText[] =
 	"よろしくお願いします。\n"
 };
 
+//入力する鍵を判断する、それに今選択する選択肢の行列を戻る
 int getinput(int *row, int rowNum, int * column, int columnNum, int listNum) {
 
 	int get;
@@ -113,6 +114,7 @@ void drawchoices(HANDLE hWindow, COORD pos, char(*choice)[100], int listNum, int
 	return;
 }
 
+//既存キャラクターを画面に表示する
 void drawchoices_forLoad(HANDLE hWindow, COORD pos, STATUS *loadList, int listNum, int indexsize, int columnsize, int index, int column) {
 
 	
@@ -145,8 +147,16 @@ void drawchoices_forLoad(HANDLE hWindow, COORD pos, STATUS *loadList, int listNu
 //開始画面を描く
 int DrawStartMenu(HANDLE hWindow, COORD pos) {
 	int strlength, press, row = 0;
+	char choices[2][100] = {
+	"新規生成\n",
+	"既存ロード"
+	};
 
-	pos.X = 25; pos.Y = 6;
+	SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | 0x0);
+	system("cls");
+
+	Sleep(400);
+	pos = { 25, 6 };
 	DrawRectangle(hWindow, pos, 50, 8, '*', ' ');
 
 	for (int i = 0; i < objectnum(startText); i++) {
@@ -156,27 +166,29 @@ int DrawStartMenu(HANDLE hWindow, COORD pos) {
 		SetConsoleCursorPosition(hWindow, pos);
 		Sleep(400);
 		printf("%s", startText[i]);
+		Sleep(400);
 	}
 
-	char choices[2][100] = {
-		"新規生成\n",
-		"既存ロード"
-	};
+	pos = { 41, 29 };
+	SetConsoleCursorPosition(hWindow, pos);
+	printf("Copyright (c) 2018 Josh, All rights reserved.");
 
 	//選択を描く
 	pos.X = 40; pos.Y = 15;
 	DrawRectangle(hWindow, pos, 20, 4, '*', ' ');
 	while (1) {
-		pos.X = 41; pos.Y = 16;
+		pos = {41, 16};
 		drawchoices(hWindow, pos, choices, 2, row);
 		press = getinput(&row, 2, 0, 0, 2);
 		if (press == ENTER) {
+			SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | 0x0);
 			system("cls");
 			return row;
 		}
 	}
 }
 
+//既存キャラクターをロードする
 int LoadCharacter(HANDLE hWindow, COORD pos, STATUS *loadList, int listNum) {
 	int press, row = 0, column = 0;
 
@@ -186,11 +198,12 @@ int LoadCharacter(HANDLE hWindow, COORD pos, STATUS *loadList, int listNum) {
 		SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 		system("cls");
 		DrawRectangle(hWindow, pos, 100, 29, '*', ' ');
+
 		pos = { 2, 2 };
 		SetConsoleCursorPosition(hWindow, pos);
 		printf("どのキャラクターを選びますか？");
-		drawchoices_forLoad(hWindow, pos, loadList, listNum, (listNum / 3) + 1, 3, row, column);
-		press = getinput(&row, (listNum / 3) + 1, &column, 3, listNum);
+		drawchoices_forLoad(hWindow, pos, loadList, listNum, ((listNum - 1) / 3) + 1, 3, row, column);
+		press = getinput(&row, ((listNum - 1) / 3) + 1, &column, 3, listNum);
 		if (press == ENTER) {
 			return row * 3 + column;
 		}
