@@ -33,33 +33,58 @@ int getinput(int *row, int rowNum, int * column, int columnNum, int listNum) {
 	int get;
 	get = _getch();
 	if (get == UP) {
-		if (*row > 0) {
+		if (*row > 0)
 			*row -= 1;
-		}
 		else {
-			*row = rowNum - 1;
+			if (((rowNum - 1) * columnNum + *column) > listNum - 1)
+				*row = rowNum - 2;
+			else
+				*row = rowNum - 1;
 		}
 	}
 	else if (get == DOWN) {
 		if (*row < rowNum - 1) {
-			*row += 1;
+			if (((*row + 1) * columnNum + *column) > listNum - 1)
+				*row = 0;
+			else
+				*row += 1;
 		}
 		else {
 			*row = 0;
 		}
 	}
 	else if (get == LEFT) {
-		if( *column > 0)
+		if (*column > 0)
 			*column -= 1;
+		else if (*column == 0)
+			if ((*row * columnNum + columnNum - 1) > listNum - 1)
+				*column = *column + (listNum - 1) - (*row * columnNum);
+			else
+				*column = columnNum - 1;
 	}
 	else if (get == RIGHT) {
-		if (*column < columnNum - 1 && (*row * 3 + *column) != listNum - 1)
+		if (*column < columnNum - 1 && (*row * columnNum + *column) != listNum - 1)
 			*column += 1;
+		else
+			*column = 0;
 	}
 	else if (get == ENTER)
 		return ENTER;
 
 	return 0;
+}
+
+void ClearScreen(HANDLE hWindow, COORD pos, int height, int width) {
+
+	pos = {0, 0};
+	SetConsoleCursorPosition(hWindow, pos);
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			printf(" ");
+		}
+	}
+	pos = { 0, 0 };
+	SetConsoleCursorPosition(hWindow, pos);
 }
 
 //ボーダーラインを描く
@@ -117,7 +142,7 @@ void drawchoices(HANDLE hWindow, COORD pos, char(*choice)[100], int listNum, int
 //既存キャラクターを画面に表示する
 void drawchoices_forLoad(HANDLE hWindow, COORD pos, STATUS *loadList, int listNum, int indexsize, int columnsize, int index, int column) {
 
-	
+
 	pos = { 2, 4 };
 	SetConsoleCursorPosition(hWindow, pos);
 
@@ -146,7 +171,7 @@ void drawchoices_forLoad(HANDLE hWindow, COORD pos, STATUS *loadList, int listNu
 
 //開始画面を描く
 int DrawStartMenu(HANDLE hWindow, COORD pos) {
-	int strlength, press, row = 0;
+	int strlength, press, row = 0, column = 0;
 	char choices[2][100] = {
 	"新規生成\n",
 	"既存ロード"
@@ -177,9 +202,9 @@ int DrawStartMenu(HANDLE hWindow, COORD pos) {
 	pos.X = 40; pos.Y = 15;
 	DrawRectangle(hWindow, pos, 20, 4, '*', ' ');
 	while (1) {
-		pos = {41, 16};
+		pos = { 41, 16 };
 		drawchoices(hWindow, pos, choices, 2, row);
-		press = getinput(&row, 2, 0, 0, 2);
+		press = getinput(&row, 2, &column, 1, 2);
 		if (press == ENTER) {
 			SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | 0x0);
 			system("cls");
@@ -196,7 +221,6 @@ int LoadCharacter(HANDLE hWindow, COORD pos, STATUS *loadList, int listNum) {
 		pos = { 0, 0 };
 		SetConsoleCursorPosition(hWindow, pos);
 		SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-		system("cls");
 		DrawRectangle(hWindow, pos, 100, 29, '*', ' ');
 
 		pos = { 2, 2 };
@@ -208,7 +232,6 @@ int LoadCharacter(HANDLE hWindow, COORD pos, STATUS *loadList, int listNum) {
 			return row * 3 + column;
 		}
 	}
-	
 
 	return 0;
 }

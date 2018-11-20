@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include "Display.h"
+#include "Battle.h"
 using namespace std;
 
 //入力したキャラクター名前が存在しているかどうか確認する
@@ -152,38 +153,16 @@ void main() {
 		}
 		flag_finished = false;
 		rewind(stdin);
+		getchar();
+		rewind(stdin);
 		_getch();
 	}
 
 	//START BATTLE !!!!!!!!!!!!!!!!!!!!!!!!======================================================//
 	//バトル準備画面を表示する
-	while (1) {
-		system("cls");
-		pos = { 34, 11 };
-		SetConsoleCursorPosition(hWindow, pos);
-		SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_INTENSITY);
-		printf("魔王とのバトル、準備はいいか！！");
-		pos = { 37, 18 };
-		SetConsoleCursorPosition(hWindow, pos);
-		SetConsoleTextAttribute(hWindow, FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-		printf("Press any key to start....");
-		if (_kbhit())
-			break;
-		Sleep(800);
-
-		system("cls");
-		pos = { 34, 11 };
-		SetConsoleCursorPosition(hWindow, pos);
-		SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_INTENSITY);
-		printf("魔王とのバトル、準備はいいか！！");
-		pos = { 37, 18 };
-		SetConsoleCursorPosition(hWindow, pos);
-		SetConsoleTextAttribute(hWindow, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-		printf("Press any key to start....");
-		if (_kbhit())
-			break;
-		Sleep(800);
-	}
+	ClearScreen(hWindow, pos, 30, 100);
+	LoadingBattle(hWindow, pos);
+	
 	rewind(stdin);
 	_getch();
 	system("cls");
@@ -252,7 +231,5 @@ void PrintPlayerStatus(HANDLE hWindow, COORD pos, STATUS *input) {
 			else
 				printf("ATTRIBUTE：Magic", input->attribute);
 		}
-
 	}
-
 }

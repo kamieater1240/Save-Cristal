@@ -11,6 +11,10 @@ typedef struct {
 	int attribute;
 }STATUS;
 
+int getinput(int *row, int rowNum, int * column, int columnNum, int listNum);
+
+void ClearScreen(HANDLE hWindow, COORD pos, int height, int width);
+
 void DrawRectangle(HANDLE hWindow, COORD pos, int width, int height, char drawChar, char emptyChar);
 
 void drawchoices(HANDLE hWindow, COORD pos, char(*choice)[100], int listNum, int index);
