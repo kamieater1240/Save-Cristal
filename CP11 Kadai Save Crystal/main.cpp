@@ -75,10 +75,21 @@ void main() {
 		//新規キャラクターを生成する
 		if (CreateorLoad == 0) {
 
-			srand((unsigned)time(NULL));
+			//srand((unsigned)time(NULL));
 
 			printf("キャラクターの名前を入力してください:");
 			scanf("%s", in_st->name);
+
+			char copy[100];
+			strcpy(copy, in_st->name);
+			for (int i = 0; i < strlen(copy); i++)
+				copy[i] = tolower(copy[i]);
+			copy[strlen(copy)] = '\0';
+			int sum = 0;
+			for (int i = 0;i<strlen(copy); i++) {
+				sum = sum + copy[i];
+			}
+			srand(sum);
 
 			bool HaveorNot = false;
 			if (characterNum > 0) {
